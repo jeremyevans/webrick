@@ -86,6 +86,7 @@ GET /\r
       msg = <<-_end_of_message_
         GET / HTTP/1.1
         Content-Length:#{cl}
+
       _end_of_message_
       req = WEBrick::HTTPRequest.new(WEBrick::Config::HTTP)
       assert_raise(WEBrick::HTTPStatus::BadRequest){
@@ -210,6 +211,7 @@ GET /\r
       GET / HTTP/1.1
       Content-Length: 1
       Content-Length: 2
+
     _end_of_message_
     req = WEBrick::HTTPRequest.new(WEBrick::Config::HTTP)
     assert_raise(WEBrick::HTTPStatus::BadRequest){
@@ -650,6 +652,25 @@ GET /\r
     assert_raise(WEBrick::HTTPStatus::EOFError) {
       req = WEBrick::HTTPRequest.new(WEBrick::Config::HTTP)
       req.parse(StringIO.new(""))
+    }
+  end
+
+  def test_eof_raised_with_missing_line_between_headers_and_body
+    msg = <<-_end_of_message_
+      GET / HTTP/1.0
+    _end_of_message_
+    req = WEBrick::HTTPRequest.new(WEBrick::Config::HTTP)
+    assert_raise(WEBrick::HTTPStatus::EOFError) {
+      req.parse(StringIO.new(msg.gsub(/^ {6}/, "").gsub("\n", "\r\n")))
+    }
+
+    msg = <<-_end_of_message_
+      GET / HTTP/1.0
+      Foo: 1
+    _end_of_message_
+    req = WEBrick::HTTPRequest.new(WEBrick::Config::HTTP)
+    assert_raise(WEBrick::HTTPStatus::EOFError) {
+      req.parse(StringIO.new(msg.gsub(/^ {6}/, "").gsub("\n", "\r\n")))
     }
   end
 
